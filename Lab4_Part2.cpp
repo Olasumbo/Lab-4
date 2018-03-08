@@ -25,8 +25,8 @@ using namespace std;
 
 int *readfile(int num);
 void manual();
-double* offset(double* array, double offsetValue);
-double* scale(double* array, double scaleValue);
+double* offset( int * array, double offsetValue);
+double* scale( int * array, double scaleValue);
 void saveFile(char* newFilename, double* numArray, double val);
 double average( int* data );
 int max(int data[],int size);
@@ -57,6 +57,7 @@ int main( int argc, char* argv[])
 				i++;
 				cout << "File value: " << n << endl;
 				Array = readfile(n);
+				
 				continue;
 			}
 			else if((argv[i][0] != '-') && (argv[i][1] != 'n'))
@@ -75,7 +76,7 @@ int main( int argc, char* argv[])
 				double * offsetArray;
 				char offsetFilename[20];
 				sprintf(offsetFilename, "Offset_data_%02d.txt", n);
-				offsetArray = offset((double*)Array, o);
+				offsetArray = offset( Array, o );
 				//cout << *(offsetArray) << endl;
 				saveFile(offsetFilename, offsetArray, o);
 				free(offsetArray);
@@ -96,7 +97,7 @@ int main( int argc, char* argv[])
 				double * ScaleArray;
 				char ScaleFilename[20];
 				sprintf(ScaleFilename, "Scaled_data_%02d.txt", n);
-				ScaleArray = scale((double*)Array, o);
+				ScaleArray = scale(Array, s );
 				//cout << *(ScaleArray) << endl;
 				saveFile(ScaleFilename, ScaleArray, s);
 				free(ScaleArray);
@@ -183,7 +184,7 @@ int *readfile(int num) //num is the file number
 	while( !feof(fp))
 	{
 		fscanf(fp, "%d", &dataArray[x]);
-		cout << dataArray[x] << endl;  //scan values into integer array
+		//cout << (int) dataArray[x] << endl;  //scan values into integer array
 		x++;
 	}
 	fclose(fp);
@@ -192,27 +193,32 @@ int *readfile(int num) //num is the file number
 }
 
 /*Outputs the offset values into the correct file*/
-double* offset(double* array, double offsetValue)
+double* offset(int * array, double offsetValue)
 {
 	int i;
-	double* newArray = (double*)calloc(arrayLength, sizeof(double));
+	double * newArray = (double * ) malloc( sizeof( double ) * arrayLength );
+
 	for(i = 0; i < arrayLength; i++)
 	{
-		newArray[i] = ( *(array) + offsetValue);
+		newArray[i] = ( (double) array[i] + offsetValue);
 	}
+	
 	cout << "length of Array: "<< arrayLength << endl;
 	//cout << "offset + inivalue:" << *(newArray) << endl; /// for some odd reason my offset is not adding to the array
+	
 	return newArray;
 }
 
-double* scale(double* array, double scaleValue)
+double* scale( int * array, double scaleValue)
 {
 	int i;
-	double* newArray = (double*)calloc(arrayLength, sizeof(double));
+	double * newArray = (double *) malloc( sizeof( double ) * arrayLength ) ;
+	
 	for(i = 0; i < arrayLength; i++)
 	{
-		newArray[i] = ( *(array)*(scaleValue));
+		newArray[i] = ( ( (double) array[i] ) * (scaleValue) );
 	}
+	
 	return newArray;
 }
 
@@ -231,13 +237,17 @@ void saveFile(char* newFilename, double* numArray, double val)
 	fclose(fp);
 }
 
-double average( int* data )
+double average( int * data )
 {
-	double i = 0;
+	int i = 0;
 	double sum = 0;
-	for( i = 0; i < *( data ); i++ )
-		sum += (double)*( data) + (i + 2 );
-	return sum / *( data );
+	
+	for( i = 0; i < arrayLength; i++ )
+	{
+		sum += (double) data[i];
+	}
+	
+	return (sum / arrayLength);
 }
 
 int max(int data[],int size) // finds max of the data
