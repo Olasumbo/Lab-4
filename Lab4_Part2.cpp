@@ -25,15 +25,22 @@ using namespace std;
 
 int *readfile(int num);
 void manual();
+double* offset(double* array, double offsetValue);
+double* scale(double* array, double scaleValue);
+void saveFile(char* newFilename, double* numArray, double val);
+double average( int* data );
+int max(int data[],int size);
 
 //Global Variable
 int arrayLength, numMax;
+char neww[15];
 
 int main( int argc, char* argv[])
 {
 	// Command Line
-	int n, o, s;
-	int i =0;
+	int n;
+	double o, s;
+	int i = 0;
 	
 	int *Array;
 	
@@ -43,16 +50,13 @@ int main( int argc, char* argv[])
 		//cout << argc << endl;
 		
 		for( i = 1; i < argc; i++ )
-		{
-			//cout << i << endl;
-			
+		{			
 			if((argv[i][0] == '-') && (argv[i][1] == 'n'))// checks for n
 			{
 				n = atoi(argv[i+1]);
 				i++;
 				cout << "File value: " << n << endl;
 				Array = readfile(n);
-				cout << (Array) << endl;
 				continue;
 			}
 			else if((argv[i][0] != '-') && (argv[i][1] != 'n'))
@@ -67,25 +71,41 @@ int main( int argc, char* argv[])
 				o = atoi(argv[i+1]);
 				i++;
 				cout << "Offset value: " << o << endl;
+				
+				double * offsetArray;
+				char offsetFilename[20];
+				sprintf(offsetFilename, "Offset_data_%02d.txt", n);
+				offsetArray = offset((double*)Array, o);
+				//cout << *(offsetArray) << endl;
+				saveFile(offsetFilename, offsetArray, o);
+				free(offsetArray);
 				continue;
 			}
-			else if((argv[i][0] != '-') && (argv[i][1] != 'n'))
+			else if((argv[i][0] != '-') && (argv[i][1] != 'o'))
 			{
 				cout << "Wrong option for offset: " << argv[i] << endl;
 				//return 1;
 			}
-			//cout << i << endl;
+			
 			//check for Scale
 			if((argv[i][0] == '-') && (argv[i][1] == 's')) // checks for o
 			{
 				s = atoi(argv[i+1]);
 				cout << "scale value: " << s << endl;
+				
+				double * ScaleArray;
+				char ScaleFilename[20];
+				sprintf(ScaleFilename, "Scaled_data_%02d.txt", n);
+				ScaleArray = scale((double*)Array, o);
+				//cout << *(ScaleArray) << endl;
+				saveFile(ScaleFilename, ScaleArray, s);
+				free(ScaleArray);
 				continue;
 			}
-			else if((argv[i][0] != '-') && (argv[i][1] != 'n'))
+			else if((argv[i][0] != '-') && (argv[i][1] != 's'))
 			{
 				cout << "Wrong option for scale: " << argv[i] << endl;
-				//return 1;
+				
 			}
 				//cout << i << endl;
 				
@@ -95,7 +115,7 @@ int main( int argc, char* argv[])
 				cout << "New Name: " << argv[i+1] << endl;
 				continue;
 			}
-			else if ((argv[i][0] != '-') && (argv[i][1] != 'n'))
+			else if ((argv[i][0] != '-') && (argv[i][1] != 'r'))
 			{
 				cout << "Wrong option for renaming: " << argv[i] << endl;
 				//return 1;
@@ -108,7 +128,7 @@ int main( int argc, char* argv[])
 				void manual();
 				continue;
 			}
-			else if((argv[i][0] != '-') && (argv[i][1] != 'n')) 
+			else if((argv[i][0] != '-') && (argv[i][1] != 'h')) 
 			{
 				cout << "Wrong option for help: " << argv[i] << endl;
 			}
@@ -118,7 +138,12 @@ int main( int argc, char* argv[])
 		{
 			manual();
 		}
-		
+	
+	cout <<"Average value is:" << average( Array ) << endl;
+	cout <<"Maximum values is:" << max(Array,arrayLength) << endl;
+	sprintf(neww,"Statistic_data_%d.txt", n);
+	FILE* offset = fopen(neww,"w");
+	fprintf(offset, "%.2f %d\n",average( Array ) , max(Array,arrayLength) );
 	
 	return 0;
 }
@@ -130,6 +155,7 @@ void manual()
 	cout << "\nUsage: " <<"./exe -n IntValue -h IntValue "<<endl;
 	cout << "\nUsage: " <<"./exe -n IntValue -r IntValue "<< endl;
 }
+
 // Will read and creates a space for the array length and make sure the numbers in the array are not greater than numMax
 int *readfile(int num) //num is the file number
 {
@@ -144,20 +170,99 @@ int *readfile(int num) //num is the file number
 	strcat(filename, ".txt");
 
 	fp = fopen(filename, "r");
-	fscanf(fp, "%d %d\n", &arrayLength, &numMax); //read in number of values and maximum value
-	dataArray =  (int*) calloc(arrayLength, sizeof(int)); //allocate memory for number of integers
-	while(fscanf(fp, "%d", &dataArray[x++]) != EOF)
+	if (fp != NULL) 
 	{
-		//scan values into integer array
+		fscanf(fp, "%d %d\n", &arrayLength, &numMax); //read in number of values and maximum value
+	}
+	else
+	{
+		cout << "File cannot be opened\n";
+	}
+	dataArray =  (int*) calloc(arrayLength, sizeof(int)); //allocate memory for number of integers
+	
+	while( !feof(fp))
+	{
+		fscanf(fp, "%d", &dataArray[x]);
+		cout << dataArray[x] << endl;  //scan values into integer array
+		x++;
 	}
 	fclose(fp);
 	
 	return dataArray;
 }
 
-/*
-void offset_scale(char* str, int offsetnum)// adds the raw data with offset/scales selected by user
+/*Outputs the offset values into the correct file*/
+double* offset(double* array, double offsetValue)
 {
-	
+	int i;
+	double* newArray = (double*)calloc(arrayLength, sizeof(double));
+	for(i = 0; i < arrayLength; i++)
+	{
+		newArray[i] = ( *(array) + offsetValue);
+	}
+	cout << "length of Array: "<< arrayLength << endl;
+	//cout << "offset + inivalue:" << *(newArray) << endl; /// for some odd reason my offset is not adding to the array
+	return newArray;
 }
- */
+
+double* scale(double* array, double scaleValue)
+{
+	int i;
+	double* newArray = (double*)calloc(arrayLength, sizeof(double));
+	for(i = 0; i < arrayLength; i++)
+	{
+		newArray[i] = ( *(array)*(scaleValue));
+	}
+	return newArray;
+}
+
+void saveFile(char* newFilename, double* numArray, double val)
+{
+	FILE* fp;
+	int i;
+	fp = fopen(newFilename, "w+");
+	fprintf(fp, "%d %.4lf\n", arrayLength, val);
+	for(i = 0; i < arrayLength; i++)
+	{
+		fprintf(fp, "%.4lf\n", numArray[i]);
+		cout << numArray[i] << endl;  //scan values into integer array
+		i++;
+	}
+	fclose(fp);
+}
+
+double average( int* data )
+{
+	double i = 0;
+	double sum = 0;
+	for( i = 0; i < *( data ); i++ )
+		sum += (double)*( data) + (i + 2 );
+	return sum / *( data );
+}
+
+int max(int data[],int size) // finds max of the data
+{
+	int i = 0;
+	int max = 0;
+	int filenumber;
+	double buffer = 0;
+	int j = 0;
+	for(i = 1;i < size+1; i++)
+	{
+		if(data[i] > max)
+		max = data[i];
+	}
+	sprintf(neww,"Normal_data_%d.txt",filenumber);
+	FILE* normal = fopen(neww,"w");
+	fprintf(normal,"%d %d\n",size, max);
+
+	for(j = 1;j < size+1; j++)
+	{
+		buffer = (double)data[j]/ max;
+		fprintf(normal, "%.2f\n",buffer);
+	}
+
+	return max;
+}
+
+
